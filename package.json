@@ -1,0 +1,26 @@
+{
+  "name": "lambda-slackbot",
+  "version": "1.0.0",
+  "description": "A lambda function slackbot that performs operations on a postgres db",
+  "main": "app.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/kharioki/Lambda-SlackBot.git"
+  },
+  "keywords": [
+    "aws",
+    "lambda",
+    "slack",
+    "node",
+    "postgres"
+  ],
+  "author": "kharioki",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/kharioki/Lambda-SlackBot/issues"
+  },
+  "homepage": "https://github.com/kharioki/Lambda-SlackBot#readme"
+}
