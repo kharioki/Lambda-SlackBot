@@ -1,6 +1,8 @@
 require('dotenv').config();
 const { App, AwsLambdaReceiver } = require('@slack/bolt');
 
+const db = require('./queries');
+
 // custom receiver
 const awsLambdaReceiver = new AwsLambdaReceiver({
   signingSecret: process.env.SLACK_SIGNING_SECRET
@@ -65,7 +67,24 @@ app.view('add_user_modal', async ({ ack, body, view, client }) => {
   const userName = view.state.values.user_name.user_name.value;
   const user = body.user.id;
 
-  console.log(userName);
+  let msg = '';
+  // add user to db
+  const res = await db.createUser(userName);
+
+  if (res) {
+    msg = `${userName} added to the database`;
+  } else {
+    msg = `${userName} could not be added to the database`;
+  }
+  //send message to sender
+  try {
+    await client.chat.postMessage({
+      channel: user,
+      text: msg
+    });
+  } catch (error) {
+    console.error(error);
+  }
 });
 
 // update user command
@@ -127,8 +146,25 @@ app.view('update_user_modal', async ({ ack, body, view, client }) => {
   const userName = view.state.values.user_name.user_name.value;
   const user = body.user.id;
 
-  console.log(userId);
-  console.log(userName);
+  let msg = '';
+  // update user in db
+  const res = await db.updateUser(userId, userName);
+
+  if (res) {
+    msg = `${userName} updated in the database`;
+  } else {
+    msg = `${userName} could not be updated in the database`;
+  }
+
+  //send message to sender
+  try {
+    await client.chat.postMessage({
+      channel: user,
+      text: msg
+    });
+  } catch (error) {
+    console.error(error);
+  }
 });
 
 // list users
@@ -136,18 +172,55 @@ app.command('/list-users', async ({ ack, body, client }) => {
   await ack();
 
   const user = body.user_id;
-  console.log(user);
+  let msg = '';
   // db call
-  // const users = await client.users.list();
+  const users = await db.getUsers();
 
-  //send message
-  await client.chat.postMessage({
-    channel: user,
-    text: 'Here are the users',
-    //text: `Here are the users: ${users.members.map(user => user.name).join(', ')}`
-  });
+  if (users) {
+    msg = `Here are the users: ${users.map(user => user.user_name).join(', ')}`;
+  } else {
+    msg = `There are no users in the database`;
+  }
 
+  //send message to user
+  try {
+    await client.chat.postMessage({
+      channel: user,
+      text: msg
+    });
+  } catch (error) {
+    console.error(error);
+  }
 });
+
+// get one user
+app.command('/get-user', async ({ ack, body, client }) => {
+  await ack();
+
+  const id = body.text;
+  const user = body.user_id;
+  let msg = '';
+
+  // db call
+  const res = await db.getUser(id);
+
+  if (res) {
+    msg = `Here is the user: ${res.user_name}`;
+  } else {
+    msg = `User ${id} not found`;
+  }
+
+  //send message to user
+  try {
+    await client.chat.postMessage({
+      channel: user,
+      text: msg
+    });
+  } catch (error) {
+    console.error(error);
+  }
+});
+
 
 // delete user command
 app.command('/delete-user', async ({ ack, body, client }) => {
@@ -195,7 +268,25 @@ app.view('delete_user_modal', async ({ ack, body, view, client }) => {
   const userId = view.state.values.user_id.user_id.value;
   const user = body.user.id;
 
-  console.log(userId);
+  let msg = '';
+  // delete user from db
+  const res = await db.deleteUser(userId);
+
+  if (res) {
+    msg = `User with ID: ${userId} deleted from the database`;
+  } else {
+    msg = `User with ID: ${userId} could not be deleted from the database`;
+  }
+
+  //send message to sender
+  try {
+    await client.chat.postMessage({
+      channel: user,
+      text: msg
+    });
+  } catch (error) {
+    console.error(error);
+  }
 });
 
 module.exports.handler = async (event, context, callback) => {
